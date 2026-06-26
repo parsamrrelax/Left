@@ -44,6 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDynamic = userData?.useDynamicTheme ?? false;
+    final isAmoled = userData?.useAmoledTheme ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -109,6 +110,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await userDataBox.put('user', userData!);
               }
             },
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('AMOLED Black Background'),
+            subtitle: const Text('Make the background pitch black while keeping dynamic accents'),
+            value: isAmoled,
+            onChanged: isDynamic
+                ? (value) async {
+                    if (userData != null) {
+                      setState(() {
+                        userData!.useAmoledTheme = value;
+                      });
+                      await userDataBox.put('user', userData!);
+                    }
+                  }
+                : null,
           ),
           const SizedBox(height: 24),
           Text(
