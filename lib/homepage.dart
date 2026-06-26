@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:Left/services/days.dart';
 import 'package:Left/UI/dot_pattern.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:Left/models/user_data.dart';
+import 'package:Left/services/widget_service.dart';
 import 'package:intl/intl.dart';
+import 'package:Left/screens/settings_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,7 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late PageController _pageController;
   late Box<UserData> userDataBox;
   UserData? userData;
@@ -21,8 +26,13 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController();
-    _loadUserData();
+    _loadUserData().then((_) {
+      _setupWidgetNavigation();
+      _triggerWidgetUpdate();
+    });
+    _checkForUpdates();
   }
 
   Future<void> _loadUserData() async {
@@ -32,10 +42,90 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  void _setupWidgetNavigation() {
+    // Check if launched via widget tap
+    WidgetService.getInitialScreenId().then((screenId) {
+      if (screenId != null) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _navigateToScreen(screenId);
+        });
+      }
+    });
+
+    // Listen for widget clicks while app is running
+    WidgetService.setScreenSelectionListener((screenId) {
+      _navigateToScreen(screenId);
+    });
+  }
+
+  void _triggerWidgetUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (userData != null && mounted) {
+        WidgetService.updateAllWidgets(context, userData!);
+      }
+    });
+  }
+
+  void _navigateToScreen(String screenId) {
+    final index = _getPageIndexForScreenId(screenId);
+    if (index != null && _pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  int? _getPageIndexForScreenId(String screenId) {
+    if (userData == null) return null;
+
+    int index = 0;
+    if (_isScreenVisible('year')) {
+      if (screenId == 'year') return index;
+      index++;
+    }
+    if (_isScreenVisible('month')) {
+      if (screenId == 'month') return index;
+      index++;
+    }
+    if (userData!.birthday != null && _isScreenVisible('birthday')) {
+      if (screenId == 'birthday') return index;
+      index++;
+    }
+    if (_isScreenVisible('life_months')) {
+      if (screenId == 'life_months') return index;
+      index++;
+    }
+    if (_isScreenVisible('life_years')) {
+      if (screenId == 'life_years') return index;
+      index++;
+    }
+
+    for (final date in userData!.importantDates) {
+      if (screenId == 'custom_${date.title}') {
+        return index;
+      }
+      index++;
+    }
+
+    return null;
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Rebuild the app UI to recalculate all date-dependent values (DateTime.now()) and refresh the dots on screen
+      setState(() {});
+      _triggerWidgetUpdate();
+    }
   }
 
   @override
@@ -54,14 +144,43 @@ class _HomePageState extends State<HomePage>
     final yearsLeft = lifespan - age;
 
     final List<Widget> pages = [
-      _buildYearView(daysUntilNextYear, daysPassed),
-      _buildMonthView(dayOfMonth, daysInMonth),
-      if (userData?.birthday != null) _buildBirthdayView(),
-      _buildLifeViewMonths(age, lifespan),
-      _buildLifeViewYears(yearsLeft, lifespan),
-      ...(userData?.importantDates ?? [])
-          .map((date) => _buildImportantDateView(date))
-          .toList(),
+      if (_isScreenVisible('year'))
+        _wrapPage(
+          child: _buildYearView(daysUntilNextYear, daysPassed),
+          title: 'Year View',
+          defaultScreenId: 'year',
+        ),
+      if (_isScreenVisible('month'))
+        _wrapPage(
+          child: _buildMonthView(dayOfMonth, daysInMonth),
+          title: 'Month View',
+          defaultScreenId: 'month',
+        ),
+      if (userData?.birthday != null && _isScreenVisible('birthday'))
+        _wrapPage(
+          child: _buildBirthdayView(),
+          title: 'Birthday View',
+          defaultScreenId: 'birthday',
+        ),
+      if (_isScreenVisible('life_months'))
+        _wrapPage(
+          child: _buildLifeViewMonths(age, lifespan),
+          title: 'Life View (Months)',
+          defaultScreenId: 'life_months',
+        ),
+      if (_isScreenVisible('life_years'))
+        _wrapPage(
+          child: _buildLifeViewYears(yearsLeft, lifespan),
+          title: 'Life View (Years)',
+          defaultScreenId: 'life_years',
+        ),
+      ...(userData?.importantDates ?? []).map((date) {
+        return _wrapPage(
+          child: _buildImportantDateView(date),
+          title: date.title,
+          customDate: date,
+        );
+      }),
     ];
 
     return SafeArea(
@@ -96,13 +215,13 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '$currentYear: $daysUntilNextYear days / ${persentLeftTillNextYear.round()}% Left',
                 style: TextStyle(
-                    fontSize: 18, color: Colors.white.withOpacity(0.4)),
+                    fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -134,14 +253,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'Day ${now.day} of $currentMonthName / ${persentLeftTillNextMonth.round()}% Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -182,14 +301,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '${userData!.birthday!.day}/${userData!.birthday!.month}: $daysUntilBirthday days Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -229,14 +348,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '${date.title}: $daysUntil Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -270,14 +389,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'life: $monthsLeft months Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -307,14 +426,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'life: $yearsLeft years Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -396,6 +515,291 @@ class _HomePageState extends State<HomePage>
       });
 
       await userDataBox.put('user', userData!);
+      if (mounted) {
+        await WidgetService.updateAllWidgets(context, userData!);
+      }
     }
+  }
+
+  bool _isScreenVisible(String screenId) {
+    final hidden = userData?.hiddenScreens ?? [];
+    return !hidden.contains(screenId);
+  }
+
+  Widget _wrapPage({
+    required Widget child,
+    required String title,
+    String? defaultScreenId,
+    ImportantDate? customDate,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () => _showPageOptionsDialog(
+        title: title,
+        defaultScreenId: defaultScreenId,
+        customDate: customDate,
+      ),
+      onDoubleTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+        );
+      },
+      child: child,
+    );
+  }
+
+  void _showPageOptionsDialog({
+    required String title,
+    String? defaultScreenId,
+    ImportantDate? customDate,
+  }) {
+    final totalVisibleScreens = _calculateVisibleScreensCount();
+    final canRemove = totalVisibleScreens > 1;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(
+            canRemove
+                ? 'Would you like to remove this screen?'
+                : 'This is the only remaining screen. You must have at least one active screen.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            if (canRemove)
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _removeScreen(
+                    defaultScreenId: defaultScreenId,
+                    customDate: customDate,
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                ),
+                child: const Text('Remove'),
+              ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showManageScreensDialog();
+              },
+              child: const Text('Manage Screens'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _removeScreen({
+    String? defaultScreenId,
+    ImportantDate? customDate,
+  }) async {
+    if (userData == null) return;
+
+    if (defaultScreenId != null) {
+      final hidden = List<String>.from(userData!.hiddenScreens ?? []);
+      if (!hidden.contains(defaultScreenId)) {
+        hidden.add(defaultScreenId);
+      }
+      setState(() {
+        userData!.hiddenScreens = hidden;
+      });
+    } else if (customDate != null) {
+      setState(() {
+        userData!.importantDates.remove(customDate);
+      });
+    }
+
+    await userDataBox.put('user', userData!);
+
+    if (mounted) {
+      await WidgetService.updateAllWidgets(context, userData!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Screen removed'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _showManageScreensDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final hasBirthday = userData?.birthday != null;
+
+            Widget buildToggleItem({
+              required String title,
+              required String screenId,
+              required bool isEnabled,
+            }) {
+              final isLastScreen = _calculateVisibleScreensCount() == 1 && isEnabled;
+
+              return CheckboxListTile(
+                title: Text(title),
+                value: isEnabled,
+                onChanged: isLastScreen
+                    ? null
+                    : (bool? checked) async {
+                        if (checked == null) return;
+                        final hidden = List<String>.from(userData!.hiddenScreens ?? []);
+                        if (checked) {
+                          hidden.remove(screenId);
+                        } else {
+                          hidden.add(screenId);
+                        }
+
+                        setState(() {
+                          userData!.hiddenScreens = hidden;
+                        });
+
+                        setDialogState(() {});
+
+                        await userDataBox.put('user', userData!);
+                        if (mounted) {
+                          await WidgetService.updateAllWidgets(context, userData!);
+                        }
+                      },
+              );
+            }
+
+            return AlertDialog(
+              title: const Text('Manage Screens'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  buildToggleItem(
+                    title: 'Year View',
+                    screenId: 'year',
+                    isEnabled: _isScreenVisible('year'),
+                  ),
+                  buildToggleItem(
+                    title: 'Month View',
+                    screenId: 'month',
+                    isEnabled: _isScreenVisible('month'),
+                  ),
+                  if (hasBirthday)
+                    buildToggleItem(
+                      title: 'Birthday View',
+                      screenId: 'birthday',
+                      isEnabled: _isScreenVisible('birthday'),
+                    ),
+                  buildToggleItem(
+                    title: 'Life View (Months)',
+                    screenId: 'life_months',
+                    isEnabled: _isScreenVisible('life_months'),
+                  ),
+                  buildToggleItem(
+                    title: 'Life View (Years)',
+                    screenId: 'life_years',
+                    isEnabled: _isScreenVisible('life_years'),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  int _calculateVisibleScreensCount() {
+    int count = 0;
+    if (_isScreenVisible('year')) count++;
+    if (_isScreenVisible('month')) count++;
+    if (userData?.birthday != null && _isScreenVisible('birthday')) count++;
+    if (_isScreenVisible('life_months')) count++;
+    if (_isScreenVisible('life_years')) count++;
+    count += userData?.importantDates.length ?? 0;
+    return count;
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.github.com/repos/mirarr-app/Left/releases/latest'),
+        headers: {'Accept': 'application/vnd.github+json'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final latestVersion = data['tag_name'] as String;
+        final htmlUrl = data['html_url'] as String;
+
+        const currentVersion = '1.0.0';
+
+        if (_isNewerVersion(currentVersion, latestVersion)) {
+          if (mounted) {
+            _showUpdateDialog(latestVersion, htmlUrl);
+          }
+        }
+      }
+    } catch (_) {
+      // Fail silently to prevent interrupting user experience
+    }
+  }
+
+  bool _isNewerVersion(String current, String latest) {
+    final cleanCurrent = current.startsWith(RegExp(r'[vV]')) ? current.substring(1) : current;
+    final cleanLatest = latest.startsWith(RegExp(r'[vV]')) ? latest.substring(1) : latest;
+
+    final currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final latestParts = cleanLatest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    for (int i = 0; i < 3; i++) {
+      final currentPart = i < currentParts.length ? currentParts[i] : 0;
+      final latestPart = i < latestParts.length ? latestParts[i] : 0;
+      if (latestPart > currentPart) return true;
+      if (latestPart < currentPart) return false;
+    }
+    return false;
+  }
+
+  void _showUpdateDialog(String latestVersion, String url) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Update Available'),
+          content: Text(
+            'A new version ($latestVersion) of Left is available. Would you like to update now?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Later'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

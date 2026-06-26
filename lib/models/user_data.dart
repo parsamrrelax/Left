@@ -13,11 +13,27 @@ class UserData extends HiveObject {
   @HiveField(2)
   List<ImportantDate> importantDates;
 
+  @HiveField(3)
+  List<String>? hiddenScreens;
+
+  @HiveField(4)
+  bool? useDynamicTheme;
+
+  @HiveField(5)
+  String? fontFamily;
+
+  @HiveField(6)
+  bool? useAmoledTheme;
+
   UserData({
     this.birthday,
     this.expectedLifespan,
     this.importantDates = const [],
-  });
+    List<String>? hiddenScreens,
+    this.useDynamicTheme = false,
+    this.fontFamily = 'System',
+    this.useAmoledTheme = false,
+  }) : hiddenScreens = hiddenScreens ?? [];
 }
 
 @HiveType(typeId: 1)
