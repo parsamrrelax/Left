@@ -20,19 +20,22 @@ class UserDataAdapter extends TypeAdapter<UserData> {
       birthday: fields[0] as DateTime?,
       expectedLifespan: fields[1] as int?,
       importantDates: (fields[2] as List).cast<ImportantDate>(),
+      hiddenScreens: (fields[3] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, UserData obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.birthday)
       ..writeByte(1)
       ..write(obj.expectedLifespan)
       ..writeByte(2)
-      ..write(obj.importantDates);
+      ..write(obj.importantDates)
+      ..writeByte(3)
+      ..write(obj.hiddenScreens);
   }
 
   @override

@@ -13,11 +13,15 @@ class UserData extends HiveObject {
   @HiveField(2)
   List<ImportantDate> importantDates;
 
+  @HiveField(3)
+  List<String>? hiddenScreens;
+
   UserData({
     this.birthday,
     this.expectedLifespan,
     this.importantDates = const [],
-  });
+    List<String>? hiddenScreens,
+  }) : hiddenScreens = hiddenScreens ?? [];
 }
 
 @HiveType(typeId: 1)
