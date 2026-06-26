@@ -34,13 +34,20 @@ class MainApp extends StatelessWidget {
       builder: (context, box, _) {
         final userData = box.get('user');
         final useDynamicTheme = userData?.useDynamicTheme ?? false;
+        final useAmoledTheme = userData?.useAmoledTheme ?? false;
         final fontFamily = userData?.fontFamily ?? 'System';
 
         return DynamicColorBuilder(
           builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
             ColorScheme colorScheme;
             if (useDynamicTheme && darkDynamic != null) {
-              colorScheme = darkDynamic;
+              if (useAmoledTheme) {
+                colorScheme = darkDynamic.copyWith(
+                  surface: Colors.black,
+                );
+              } else {
+                colorScheme = darkDynamic;
+              }
             } else {
               colorScheme = const ColorScheme.dark(
                 surface: Colors.black,
