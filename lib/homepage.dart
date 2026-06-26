@@ -4,6 +4,7 @@ import 'package:Left/UI/dot_pattern.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:Left/models/user_data.dart';
 import 'package:intl/intl.dart';
+import 'package:Left/screens/settings_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -125,13 +126,13 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '$currentYear: $daysUntilNextYear days / ${persentLeftTillNextYear.round()}% Left',
                 style: TextStyle(
-                    fontSize: 18, color: Colors.white.withOpacity(0.4)),
+                    fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -163,14 +164,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'Day ${now.day} of $currentMonthName / ${persentLeftTillNextMonth.round()}% Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -211,14 +212,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '${userData!.birthday!.day}/${userData!.birthday!.month}: $daysUntilBirthday days Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -258,14 +259,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '${date.title}: $daysUntil Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -299,14 +300,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'life: $monthsLeft months Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -336,14 +337,14 @@ class _HomePageState extends State<HomePage>
                 onPressed: () => _addNewImportantDate(context),
                 icon: Icon(
                   Icons.add,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 'life: $yearsLeft years Left',
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -446,6 +447,12 @@ class _HomePageState extends State<HomePage>
         defaultScreenId: defaultScreenId,
         customDate: customDate,
       ),
+      onDoubleTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+        );
+      },
       child: child,
     );
   }

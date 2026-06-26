@@ -16,11 +16,15 @@ class UserData extends HiveObject {
   @HiveField(3)
   List<String>? hiddenScreens;
 
+  @HiveField(4)
+  bool? useDynamicTheme;
+
   UserData({
     this.birthday,
     this.expectedLifespan,
     this.importantDates = const [],
     List<String>? hiddenScreens,
+    this.useDynamicTheme = false,
   }) : hiddenScreens = hiddenScreens ?? [];
 }
 

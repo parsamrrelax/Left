@@ -66,7 +66,9 @@ class DotPattern extends StatelessWidget {
                   height: dotSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: index < startDay ? Colors.grey[800] : Colors.white70,
+                    color: index < startDay
+                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.15)
+                        : Theme.of(context).colorScheme.primary,
                   ),
                 );
               }),
