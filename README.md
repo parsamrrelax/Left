@@ -16,6 +16,8 @@
 <img src="https://github.com/user-attachments/assets/cd240c9d-893b-4a33-bda6-6da0a9eadec0" width="300"> <img src="https://github.com/user-attachments/assets/cb984df4-c9d7-428e-8ab8-86e8a436d24f" width="300"> 
 
 Left allows you to watch how much is left from a certain day in a cool way.
+- **Double tap any screen for settings.**
+- **Hold any screen to delete it.**
 
 ## Acknowledgments
 
