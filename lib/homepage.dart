@@ -743,7 +743,7 @@ class _HomePageState extends State<HomePage>
         final latestVersion = data['tag_name'] as String;
         final htmlUrl = data['html_url'] as String;
 
-        const currentVersion = '0.2.0';
+        const currentVersion = '1.0.0';
 
         if (_isNewerVersion(currentVersion, latestVersion)) {
           if (mounted) {
