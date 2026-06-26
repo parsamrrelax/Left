@@ -22,6 +22,9 @@ class UserData extends HiveObject {
   @HiveField(5)
   String? fontFamily;
 
+  @HiveField(6)
+  bool? useAmoledTheme;
+
   UserData({
     this.birthday,
     this.expectedLifespan,
@@ -29,6 +32,7 @@ class UserData extends HiveObject {
     List<String>? hiddenScreens,
     this.useDynamicTheme = false,
     this.fontFamily = 'System',
+    this.useAmoledTheme = false,
   }) : hiddenScreens = hiddenScreens ?? [];
 }
 
