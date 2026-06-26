@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:Left/models/user_data.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,11 +14,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late Box<UserData> userDataBox;
   UserData? userData;
 
+  final List<String> _fonts = [
+    'System',
+    'Inter',
+    'Poppins',
+    'JetBrains Mono',
+    'Lora',
+  ];
+
   @override
   void initState() {
     super.initState();
     userDataBox = Hive.box<UserData>('userData');
     userData = userDataBox.get('user');
+  }
+
+  TextStyle _getPreviewStyle(String fontName) {
+    if (fontName == 'System') {
+      return const TextStyle();
+    }
+    try {
+      return GoogleFonts.getFont(fontName);
+    } catch (_) {
+      return const TextStyle();
+    }
   }
 
   @override
@@ -90,6 +110,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
+          const SizedBox(height: 24),
+          Text(
+            'Typography',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._fonts.map((font) {
+            final isSelected = (userData?.fontFamily ?? 'System') == font;
+            return Card(
+              elevation: 0,
+              color: isSelected
+                  ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+                  : theme.colorScheme.surfaceContainerLowest,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline.withOpacity(0.12),
+                  width: 1.5,
+                ),
+              ),
+              child: ListTile(
+                title: Text(
+                  font,
+                  style: _getPreviewStyle(font).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  '123 days / 54% Left',
+                  style: _getPreviewStyle(font).copyWith(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(
+                        Icons.check_circle,
+                        color: theme.colorScheme.primary,
+                      )
+                    : null,
+                onTap: () async {
+                  if (userData != null) {
+                    setState(() {
+                      userData!.fontFamily = font;
+                    });
+                    await userDataBox.put('user', userData!);
+                  }
+                },
+              ),
+            );
+          }),
         ],
       ),
     );
