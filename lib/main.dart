@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:Left/homepage.dart';
 import 'package:Left/models/user_data.dart';
 import 'package:Left/screens/setup_screen.dart';
@@ -33,6 +34,7 @@ class MainApp extends StatelessWidget {
       builder: (context, box, _) {
         final userData = box.get('user');
         final useDynamicTheme = userData?.useDynamicTheme ?? false;
+        final fontFamily = userData?.fontFamily ?? 'System';
 
         return DynamicColorBuilder(
           builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
@@ -46,12 +48,22 @@ class MainApp extends StatelessWidget {
               );
             }
 
+            String? resolvedFontFamily;
+            if (fontFamily != 'System') {
+              try {
+                resolvedFontFamily = GoogleFonts.getFont(fontFamily).fontFamily;
+              } catch (_) {
+                resolvedFontFamily = null;
+              }
+            }
+
             return MaterialApp(
               debugShowCheckedModeBanner: false,
               home: hasCompletedSetup ? const HomePage() : const SetupScreen(),
               theme: ThemeData(
                 colorScheme: colorScheme,
                 useMaterial3: true,
+                fontFamily: resolvedFontFamily,
               ),
             );
           },
