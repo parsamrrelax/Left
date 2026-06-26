@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:Left/services/days.dart';
 import 'package:Left/UI/dot_pattern.dart';
@@ -5,6 +6,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:Left/models/user_data.dart';
 import 'package:intl/intl.dart';
 import 'package:Left/screens/settings_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +27,7 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _pageController = PageController();
     _loadUserData();
+    _checkForUpdates();
   }
 
   Future<void> _loadUserData() async {
@@ -634,5 +638,76 @@ class _HomePageState extends State<HomePage>
     if (_isScreenVisible('life_years')) count++;
     count += userData?.importantDates.length ?? 0;
     return count;
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.github.com/repos/mirarr-app/Left/releases/latest'),
+        headers: {'Accept': 'application/vnd.github+json'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final latestVersion = data['tag_name'] as String;
+        final htmlUrl = data['html_url'] as String;
+
+        const currentVersion = '0.2.0';
+
+        if (_isNewerVersion(currentVersion, latestVersion)) {
+          if (mounted) {
+            _showUpdateDialog(latestVersion, htmlUrl);
+          }
+        }
+      }
+    } catch (_) {
+      // Fail silently to prevent interrupting user experience
+    }
+  }
+
+  bool _isNewerVersion(String current, String latest) {
+    final cleanCurrent = current.startsWith(RegExp(r'[vV]')) ? current.substring(1) : current;
+    final cleanLatest = latest.startsWith(RegExp(r'[vV]')) ? latest.substring(1) : latest;
+
+    final currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final latestParts = cleanLatest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    for (int i = 0; i < 3; i++) {
+      final currentPart = i < currentParts.length ? currentParts[i] : 0;
+      final latestPart = i < latestParts.length ? latestParts[i] : 0;
+      if (latestPart > currentPart) return true;
+      if (latestPart < currentPart) return false;
+    }
+    return false;
+  }
+
+  void _showUpdateDialog(String latestVersion, String url) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Update Available'),
+          content: Text(
+            'A new version ($latestVersion) of Left is available. Would you like to update now?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Later'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
