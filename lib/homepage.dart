@@ -121,24 +121,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 '$currentYear: $daysUntilNextYear days / ${persentLeftTillNextYear.round()}% Left',
@@ -171,24 +159,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 'Day ${now.day} of $currentMonthName / ${persentLeftTillNextMonth.round()}% Left',
@@ -231,24 +207,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 '${userData!.birthday!.day}/${userData!.birthday!.month}: $daysUntilBirthday days Left',
@@ -290,24 +254,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 '${date.title}: $daysUntil Left',
@@ -343,24 +295,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 'life: $monthsLeft months Left',
@@ -392,24 +332,12 @@ class _HomePageState extends State<HomePage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => _addNewImportantDate(context),
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _showManageScreensDialog,
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white.withOpacity(0.4),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => _addNewImportantDate(context),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white.withOpacity(0.4),
+                ),
               ),
               Text(
                 'life: $yearsLeft years Left',
