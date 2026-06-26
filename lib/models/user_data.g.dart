@@ -22,13 +22,14 @@ class UserDataAdapter extends TypeAdapter<UserData> {
       importantDates: (fields[2] as List).cast<ImportantDate>(),
       hiddenScreens: (fields[3] as List?)?.cast<String>(),
       useDynamicTheme: fields[4] as bool?,
+      fontFamily: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserData obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.birthday)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class UserDataAdapter extends TypeAdapter<UserData> {
       ..writeByte(3)
       ..write(obj.hiddenScreens)
       ..writeByte(4)
-      ..write(obj.useDynamicTheme);
+      ..write(obj.useDynamicTheme)
+      ..writeByte(5)
+      ..write(obj.fontFamily);
   }
 
   @override
