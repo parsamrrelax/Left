@@ -4,6 +4,7 @@ import 'package:Left/services/days.dart';
 import 'package:Left/UI/dot_pattern.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:Left/models/user_data.dart';
+import 'package:Left/services/widget_service.dart';
 import 'package:intl/intl.dart';
 import 'package:Left/screens/settings_screen.dart';
 import 'package:http/http.dart' as http;
@@ -17,7 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late PageController _pageController;
   late Box<UserData> userDataBox;
   UserData? userData;
@@ -25,8 +26,12 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController();
-    _loadUserData();
+    _loadUserData().then((_) {
+      _setupWidgetNavigation();
+      _triggerWidgetUpdate();
+    });
     _checkForUpdates();
   }
 
@@ -37,10 +42,90 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  void _setupWidgetNavigation() {
+    // Check if launched via widget tap
+    WidgetService.getInitialScreenId().then((screenId) {
+      if (screenId != null) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _navigateToScreen(screenId);
+        });
+      }
+    });
+
+    // Listen for widget clicks while app is running
+    WidgetService.setScreenSelectionListener((screenId) {
+      _navigateToScreen(screenId);
+    });
+  }
+
+  void _triggerWidgetUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (userData != null && mounted) {
+        WidgetService.updateAllWidgets(context, userData!);
+      }
+    });
+  }
+
+  void _navigateToScreen(String screenId) {
+    final index = _getPageIndexForScreenId(screenId);
+    if (index != null && _pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  int? _getPageIndexForScreenId(String screenId) {
+    if (userData == null) return null;
+
+    int index = 0;
+    if (_isScreenVisible('year')) {
+      if (screenId == 'year') return index;
+      index++;
+    }
+    if (_isScreenVisible('month')) {
+      if (screenId == 'month') return index;
+      index++;
+    }
+    if (userData!.birthday != null && _isScreenVisible('birthday')) {
+      if (screenId == 'birthday') return index;
+      index++;
+    }
+    if (_isScreenVisible('life_months')) {
+      if (screenId == 'life_months') return index;
+      index++;
+    }
+    if (_isScreenVisible('life_years')) {
+      if (screenId == 'life_years') return index;
+      index++;
+    }
+
+    for (final date in userData!.importantDates) {
+      if (screenId == 'custom_${date.title}') {
+        return index;
+      }
+      index++;
+    }
+
+    return null;
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Rebuild the app UI to recalculate all date-dependent values (DateTime.now()) and refresh the dots on screen
+      setState(() {});
+      _triggerWidgetUpdate();
+    }
   }
 
   @override
@@ -430,6 +515,9 @@ class _HomePageState extends State<HomePage>
       });
 
       await userDataBox.put('user', userData!);
+      if (mounted) {
+        await WidgetService.updateAllWidgets(context, userData!);
+      }
     }
   }
 
@@ -534,6 +622,7 @@ class _HomePageState extends State<HomePage>
     await userDataBox.put('user', userData!);
 
     if (mounted) {
+      await WidgetService.updateAllWidgets(context, userData!);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Screen removed'),
@@ -579,6 +668,9 @@ class _HomePageState extends State<HomePage>
                         setDialogState(() {});
 
                         await userDataBox.put('user', userData!);
+                        if (mounted) {
+                          await WidgetService.updateAllWidgets(context, userData!);
+                        }
                       },
               );
             }
